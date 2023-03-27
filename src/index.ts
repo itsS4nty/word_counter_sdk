@@ -23,11 +23,17 @@ export class WordCounterSDK {
     addWord(word: string) {
         if(!word) return;
         this.words.push(word);
+        if(this.instance instanceof WordCounterSDKListeners) {
+            this.instance.addWords(this.words);
+        }
     }
 
     setWords(words: string[]) {
         if(!words || !words.length) return;
         this.words = [...this.words, ...words];
+        if(this.instance instanceof WordCounterSDKListeners) {
+            this.instance.addWords(this.words);
+        }
     }
 
     async findWords() {
@@ -108,6 +114,10 @@ class WordCounterSDKListeners implements IWordCounterSDKSharedFunctions {
         })
     }
 
+    addWords(words: string[]) {
+        this.publishOnAddWord(words);
+    }
+
     getTotal = () => this.total;
 
     subscribeToEvents(callback: IWordCounterSDKListeners) {
@@ -117,6 +127,10 @@ class WordCounterSDKListeners implements IWordCounterSDKSharedFunctions {
     unsubscribeToEvents(callback: IWordCounterSDKListeners) {
         let index = this.suscribers.indexOf(callback);
         if(index !== -1) this.suscribers.splice(index, 1);
+    }
+
+    protected publishOnAddWord(word: string[]) {
+        this.suscribers.forEach((listener) => listener.onAddWord?.(word));
     }
 
     protected publishOnWordFound(wordsFound: number) {

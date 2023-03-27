@@ -19,9 +19,11 @@ declare class WordCounterSDKListeners implements IWordCounterSDKSharedFunctions 
     private suscribers;
     private total;
     checkWords(words: string[], text: string): void;
+    addWords(words: string[]): void;
     getTotal: () => number;
     subscribeToEvents(callback: IWordCounterSDKListeners): void;
     unsubscribeToEvents(callback: IWordCounterSDKListeners): void;
+    protected publishOnAddWord(word: string[]): void;
     protected publishOnWordFound(wordsFound: number): void;
 }
 declare class WordCounterSDKWithoutListeners implements IWordCounterSDKSharedFunctions {

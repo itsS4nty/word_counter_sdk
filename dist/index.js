@@ -72,6 +72,9 @@ var WordCounterSDK = /** @class */ (function () {
         if (!words || !words.length)
             return;
         this.words = __spreadArray(__spreadArray([], this.words, true), words, true);
+        if (this.instance instanceof WordCounterSDKListeners) {
+            this.instance.addWords(this.words);
+        }
     };
     WordCounterSDK.prototype.findWords = function () {
         return __awaiter(this, void 0, void 0, function () {
@@ -168,6 +171,9 @@ var WordCounterSDKListeners = /** @class */ (function () {
             }
         });
     };
+    WordCounterSDKListeners.prototype.addWords = function (words) {
+        this.publishOnAddWord(words);
+    };
     WordCounterSDKListeners.prototype.subscribeToEvents = function (callback) {
         this.suscribers.push(callback);
     };
@@ -175,6 +181,9 @@ var WordCounterSDKListeners = /** @class */ (function () {
         var index = this.suscribers.indexOf(callback);
         if (index !== -1)
             this.suscribers.splice(index, 1);
+    };
+    WordCounterSDKListeners.prototype.publishOnAddWord = function (word) {
+        this.suscribers.forEach(function (listener) { var _a; return (_a = listener.onAddWord) === null || _a === void 0 ? void 0 : _a.call(listener, word); });
     };
     WordCounterSDKListeners.prototype.publishOnWordFound = function (wordsFound) {
         this.suscribers.forEach(function (listener) { var _a; return (_a = listener.onWordFound) === null || _a === void 0 ? void 0 : _a.call(listener, wordsFound); });
