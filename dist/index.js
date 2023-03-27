@@ -35,6 +35,22 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var __read = (this && this.__read) || function (o, n) {
+    var m = typeof Symbol === "function" && o[Symbol.iterator];
+    if (!m) return o;
+    var i = m.call(o), r, ar = [], e;
+    try {
+        while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
+    }
+    catch (error) { e = { error: error }; }
+    finally {
+        try {
+            if (r && !r.done && (m = i["return"])) m.call(i);
+        }
+        finally { if (e) throw e.error; }
+    }
+    return ar;
+};
 var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
         if (ar || !(i in from)) {
@@ -59,12 +75,14 @@ var WordCounterSDK = /** @class */ (function () {
         this.instance = new WordCounterSDKWithoutListeners();
     }
     WordCounterSDK.prototype.setFile = function (file) {
-        if (!file)
-            return;
+        if (!file.trim())
+            throw new Error("Invalid argument: file must be a non-empty string");
         this.file = file;
     };
     WordCounterSDK.prototype.addWord = function (word) {
-        if (!word)
+        if (!word.trim())
+            throw new Error("Invalid argument: word must be a non-empty string");
+        if (this.words.includes(word))
             return;
         this.words.push(word);
         if (this.instance instanceof WordCounterSDKListeners) {
@@ -73,15 +91,16 @@ var WordCounterSDK = /** @class */ (function () {
     };
     WordCounterSDK.prototype.setWords = function (words) {
         if (!words || !words.length)
-            return;
-        this.words = __spreadArray(__spreadArray([], this.words, true), words, true);
+            throw new Error("Invalid param: words must be an array with at least one word.");
+        var newWords = __spreadArray([], __read(new Set(__spreadArray(__spreadArray([], __read(this.words), false), __read(words), false))), false);
+        this.words = newWords;
         if (this.instance instanceof WordCounterSDKListeners) {
             this.instance.addWords(this.words);
         }
     };
     WordCounterSDK.prototype.deleteWord = function (word) {
         if (!word)
-            return;
+            throw new Error("Invalid argument: word must be a non-empty string");
         this.words = this.words.filter(function (_word) { return _word !== word; });
         if (this.instance instanceof WordCounterSDKListeners) {
             this.instance.addWords(this.words);
@@ -94,7 +113,9 @@ var WordCounterSDK = /** @class */ (function () {
                 switch (_a.label) {
                     case 0:
                         if (!this.file)
-                            return [2 /*return*/];
+                            throw new Error('No file URL provided.');
+                        if (!this.words.length)
+                            throw new Error('No words to find provided.');
                         if (this.instance instanceof WordCounterSDKListeners) {
                             this.instance.start();
                         }
@@ -102,7 +123,7 @@ var WordCounterSDK = /** @class */ (function () {
                     case 1:
                         response = _a.sent();
                         if (!response || !response.body)
-                            return [2 /*return*/];
+                            throw new Error('Failed to fetch file.');
                         reader = response.body.getReader();
                         return [4 /*yield*/, reader.read()];
                     case 2:
@@ -130,26 +151,29 @@ var WordCounterSDK = /** @class */ (function () {
     };
     WordCounterSDK.prototype.getTotal = function () {
         if (!this.instance)
-            return;
+            throw new Error('WordCounterSDK instance is not initialized');
         return this.instance.getTotal();
     };
     WordCounterSDK.prototype.reset = function () {
+        if (!this.instance)
+            throw new Error('WordCounterSDK instance is not initialized');
         this.words = [];
         this.previousChunk = null;
+        this.instance.resetTotal;
     };
     WordCounterSDK.prototype.subscribeToEvents = function (callback) {
         if (this.instance instanceof WordCounterSDKListeners) {
             this.instance.subscribeToEvents(callback);
             return;
         }
-        throw new Error("Can't use this method on non listeners instance");
+        throw new Error("This method can only be used with WordCounterSDKListeners instance");
     };
     WordCounterSDK.prototype.unsubscribeToEvents = function (callback) {
         if (this.instance instanceof WordCounterSDKListeners) {
             this.instance.unsubscribeToEvents(callback);
             return;
         }
-        throw new Error("Can't use this method on non listeners instance");
+        throw new Error("This method can only be used with WordCounterSDKListeners instance");
     };
     WordCounterSDK.prototype.analyzeChunk = function (chunk) {
         if (!this.instance)
@@ -180,6 +204,7 @@ var WordCounterSDKListeners = /** @class */ (function () {
         this.suscribers = [];
         this.total = 0;
         this.getTotal = function () { return _this.total; };
+        this.resetTotal = function () { return _this.total = 0; };
     }
     WordCounterSDKListeners.prototype.checkWords = function (words, text) {
         var _this = this;
@@ -187,7 +212,6 @@ var WordCounterSDKListeners = /** @class */ (function () {
             var regex = new RegExp("\\b" + word + "\\b", 'g');
             var matches = text.match(regex);
             if (matches && matches.length) {
-                // Quitar el total cuando este todo acabado
                 _this.total += matches.length;
                 _this.publishOnWordFound(matches.length);
             }
@@ -230,16 +254,15 @@ var WordCounterSDKWithoutListeners = /** @class */ (function () {
         var _this = this;
         this.total = 0;
         this.getTotal = function () { return _this.total; };
+        this.resetTotal = function () { return _this.total = 0; };
     }
     WordCounterSDKWithoutListeners.prototype.checkWords = function (words, text) {
         var _this = this;
         words.forEach(function (word) {
             var regex = new RegExp("\\b" + word + "\\b", 'g');
             var matches = text.match(regex);
-            if (matches && matches.length) {
-                // Quitar el total cuando este todo acabado
+            if (matches && matches.length)
                 _this.total += matches.length;
-            }
         });
     };
     return WordCounterSDKWithoutListeners;

@@ -11,7 +11,7 @@ export declare class WordCounterSDK {
     setWords(words: string[]): void;
     deleteWord(word: string): void;
     findWords(): Promise<void>;
-    getTotal(): number | undefined;
+    getTotal(): number;
     reset(): void;
     subscribeToEvents(callback: IWordCounterSDKListeners): void;
     unsubscribeToEvents(callback: IWordCounterSDKListeners): void;
@@ -25,6 +25,7 @@ declare class WordCounterSDKListeners implements IWordCounterSDKSharedFunctions 
     start(): void;
     finish(): void;
     getTotal: () => number;
+    resetTotal: () => number;
     subscribeToEvents(callback: IWordCounterSDKListeners): void;
     unsubscribeToEvents(callback: IWordCounterSDKListeners): void;
     protected publishOnAddWord(word: string[]): void;
@@ -36,5 +37,6 @@ declare class WordCounterSDKWithoutListeners implements IWordCounterSDKSharedFun
     private total;
     checkWords(words: string[], text: string): void;
     getTotal: () => number;
+    resetTotal: () => number;
 }
 export {};

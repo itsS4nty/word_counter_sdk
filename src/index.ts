@@ -16,12 +16,18 @@ export class WordCounterSDK {
     }
 
     setFile(file: string) {
-        if(!file) return;
+        if(!file.trim())
+            throw new Error("Invalid argument: file must be a non-empty string");
+
         this.file = file;
     }
 
     addWord(word: string) {
-        if(!word) return;
+        if(!word.trim())
+            throw new Error("Invalid argument: word must be a non-empty string");
+
+        if (this.words.includes(word))
+            return;
         this.words.push(word);
         if(this.instance instanceof WordCounterSDKListeners) {
             this.instance.addWords(this.words);
@@ -29,15 +35,20 @@ export class WordCounterSDK {
     }
 
     setWords(words: string[]) {
-        if(!words || !words.length) return;
-        this.words = [...this.words, ...words];
+        if(!words || !words.length)
+            throw new Error("Invalid param: words must be an array with at least one word.");
+
+        const newWords = [...new Set([...this.words, ...words])];
+        this.words = newWords;
         if(this.instance instanceof WordCounterSDKListeners) {
             this.instance.addWords(this.words);
         }
     }
 
     deleteWord(word: string) {
-        if(!word) return;
+        if(!word)
+            throw new Error("Invalid argument: word must be a non-empty string");
+
         this.words = this.words.filter(_word => _word !== word);
         if(this.instance instanceof WordCounterSDKListeners) {
             this.instance.addWords(this.words);
@@ -45,12 +56,19 @@ export class WordCounterSDK {
     }
 
     async findWords() {
-        if(!this.file) return;
+        if(!this.file)
+            throw new Error('No file URL provided.');
+        
+        if(!this.words.length)
+            throw new Error('No words to find provided.');
+
         if(this.instance instanceof WordCounterSDKListeners) {
             this.instance.start();
         }
         const response = await fetch(this.file);
-        if(!response || !response.body) return;
+        if(!response || !response.body)
+            throw new Error('Failed to fetch file.');
+            
         const reader = response.body.getReader();
 
         let result = await reader.read();
@@ -72,13 +90,19 @@ export class WordCounterSDK {
     }
     
     getTotal() {
-        if(!this.instance) return;
+        if(!this.instance)
+            throw new Error('WordCounterSDK instance is not initialized');
+
         return this.instance.getTotal();
     }
     
     reset() {
+        if(!this.instance)
+            throw new Error('WordCounterSDK instance is not initialized');
+
         this.words = [];
         this.previousChunk = null;
+        this.instance.resetTotal;
     }
     
     subscribeToEvents(callback: IWordCounterSDKListeners) {
@@ -86,7 +110,7 @@ export class WordCounterSDK {
             this.instance.subscribeToEvents(callback);
             return;
         }
-        throw new Error("Can't use this method on non listeners instance");
+        throw new Error("This method can only be used with WordCounterSDKListeners instance");
     }
     
     unsubscribeToEvents(callback: IWordCounterSDKListeners) {
@@ -94,7 +118,7 @@ export class WordCounterSDK {
             this.instance.unsubscribeToEvents(callback);
             return;
         }
-        throw new Error("Can't use this method on non listeners instance");
+        throw new Error("This method can only be used with WordCounterSDKListeners instance");
     }
 
     private analyzeChunk(chunk: string) {
@@ -127,7 +151,6 @@ class WordCounterSDKListeners implements IWordCounterSDKSharedFunctions {
             let regex = new RegExp(`\\b${word}\\b`, 'g');
             let matches = text.match(regex);
             if(matches && matches.length) {
-                // Quitar el total cuando este todo acabado
                 this.total += matches.length;
                 this.publishOnWordFound(matches.length);
             }
@@ -147,6 +170,8 @@ class WordCounterSDKListeners implements IWordCounterSDKSharedFunctions {
     }
 
     getTotal = () => this.total;
+
+    resetTotal = () => this.total = 0;
 
     subscribeToEvents(callback: IWordCounterSDKListeners) {
         this.suscribers.push(callback);
@@ -182,12 +207,12 @@ class WordCounterSDKWithoutListeners implements IWordCounterSDKSharedFunctions {
         words.forEach((word) => {
             let regex = new RegExp(`\\b${word}\\b`, 'g');
             let matches = text.match(regex);
-            if(matches && matches.length) {
-                // Quitar el total cuando este todo acabado
+            if(matches && matches.length)
                 this.total += matches.length;
-            }
         })
     }
 
     getTotal = () => this.total;
+
+    resetTotal = () => this.total = 0;
 }
