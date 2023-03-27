@@ -36,8 +36,19 @@ export class WordCounterSDK {
         }
     }
 
+    deleteWord(word: string) {
+        if(!word) return;
+        this.words = this.words.filter(_word => _word !== word);
+        if(this.instance instanceof WordCounterSDKListeners) {
+            this.instance.addWords(this.words);
+        }
+    }
+
     async findWords() {
         if(!this.file) return;
+        if(this.instance instanceof WordCounterSDKListeners) {
+            this.instance.start();
+        }
         const response = await fetch(this.file);
         if(!response || !response.body) return;
         const reader = response.body.getReader();
@@ -54,13 +65,22 @@ export class WordCounterSDK {
             result = await reader.read();
             chunk = result.value;
         }
-    }
 
+        if(this.instance instanceof WordCounterSDKListeners) {
+            this.instance.finish();
+        }
+    }
+    
     getTotal() {
         if(!this.instance) return;
         return this.instance.getTotal();
     }
-
+    
+    reset() {
+        this.words = [];
+        this.previousChunk = null;
+    }
+    
     subscribeToEvents(callback: IWordCounterSDKListeners) {
         if(this.instance instanceof WordCounterSDKListeners) {
             this.instance.subscribeToEvents(callback);
@@ -118,6 +138,14 @@ class WordCounterSDKListeners implements IWordCounterSDKSharedFunctions {
         this.publishOnAddWord(words);
     }
 
+    start() {
+        this.publishOnStart();
+    }
+
+    finish() {
+        this.publishOnFinish();
+    }
+
     getTotal = () => this.total;
 
     subscribeToEvents(callback: IWordCounterSDKListeners) {
@@ -135,6 +163,14 @@ class WordCounterSDKListeners implements IWordCounterSDKSharedFunctions {
 
     protected publishOnWordFound(wordsFound: number) {
         this.suscribers.forEach((listener) => listener.onWordFound?.(wordsFound));
+    }
+    
+    protected publishOnStart() {
+        this.suscribers.forEach((listener) => listener.onStart?.());
+    }
+
+    protected publishOnFinish() {
+        this.suscribers.forEach((listener) => listener.onFinish?.());
     }
 }
 

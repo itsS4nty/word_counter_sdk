@@ -67,11 +67,22 @@ var WordCounterSDK = /** @class */ (function () {
         if (!word)
             return;
         this.words.push(word);
+        if (this.instance instanceof WordCounterSDKListeners) {
+            this.instance.addWords(this.words);
+        }
     };
     WordCounterSDK.prototype.setWords = function (words) {
         if (!words || !words.length)
             return;
         this.words = __spreadArray(__spreadArray([], this.words, true), words, true);
+        if (this.instance instanceof WordCounterSDKListeners) {
+            this.instance.addWords(this.words);
+        }
+    };
+    WordCounterSDK.prototype.deleteWord = function (word) {
+        if (!word)
+            return;
+        this.words = this.words.filter(function (_word) { return _word !== word; });
         if (this.instance instanceof WordCounterSDKListeners) {
             this.instance.addWords(this.words);
         }
@@ -84,6 +95,9 @@ var WordCounterSDK = /** @class */ (function () {
                     case 0:
                         if (!this.file)
                             return [2 /*return*/];
+                        if (this.instance instanceof WordCounterSDKListeners) {
+                            this.instance.start();
+                        }
                         return [4 /*yield*/, fetch(this.file)];
                     case 1:
                         response = _a.sent();
@@ -105,7 +119,11 @@ var WordCounterSDK = /** @class */ (function () {
                         result = _a.sent();
                         chunk = result.value;
                         return [3 /*break*/, 3];
-                    case 5: return [2 /*return*/];
+                    case 5:
+                        if (this.instance instanceof WordCounterSDKListeners) {
+                            this.instance.finish();
+                        }
+                        return [2 /*return*/];
                 }
             });
         });
@@ -114,6 +132,10 @@ var WordCounterSDK = /** @class */ (function () {
         if (!this.instance)
             return;
         return this.instance.getTotal();
+    };
+    WordCounterSDK.prototype.reset = function () {
+        this.words = [];
+        this.previousChunk = null;
     };
     WordCounterSDK.prototype.subscribeToEvents = function (callback) {
         if (this.instance instanceof WordCounterSDKListeners) {
@@ -174,6 +196,12 @@ var WordCounterSDKListeners = /** @class */ (function () {
     WordCounterSDKListeners.prototype.addWords = function (words) {
         this.publishOnAddWord(words);
     };
+    WordCounterSDKListeners.prototype.start = function () {
+        this.publishOnStart();
+    };
+    WordCounterSDKListeners.prototype.finish = function () {
+        this.publishOnFinish();
+    };
     WordCounterSDKListeners.prototype.subscribeToEvents = function (callback) {
         this.suscribers.push(callback);
     };
@@ -187,6 +215,12 @@ var WordCounterSDKListeners = /** @class */ (function () {
     };
     WordCounterSDKListeners.prototype.publishOnWordFound = function (wordsFound) {
         this.suscribers.forEach(function (listener) { var _a; return (_a = listener.onWordFound) === null || _a === void 0 ? void 0 : _a.call(listener, wordsFound); });
+    };
+    WordCounterSDKListeners.prototype.publishOnStart = function () {
+        this.suscribers.forEach(function (listener) { var _a; return (_a = listener.onStart) === null || _a === void 0 ? void 0 : _a.call(listener); });
+    };
+    WordCounterSDKListeners.prototype.publishOnFinish = function () {
+        this.suscribers.forEach(function (listener) { var _a; return (_a = listener.onFinish) === null || _a === void 0 ? void 0 : _a.call(listener); });
     };
     return WordCounterSDKListeners;
 }());
