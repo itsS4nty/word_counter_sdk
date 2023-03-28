@@ -4,7 +4,8 @@
   "description": "Library that helps you to count words coincidences on texts",
   "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "custom-build": "npm i && tsc"
   },
   "author": "Santy Alvarez Osuca",
   "license": "ISC",
