@@ -35,8 +35,8 @@ With these tests, I have been able to detect and correct errors and failures in 
 In summary, tests are an essential tool to ensure that the library works correctly and without errors. They allow me to verify that the functions behave as expected and correct any errors before they occur in the application
 
 ## Example of use
-### main.ts
-```
+`main.ts`
+```typescript
 // Import the WordCounterSDK library
 import { WordCounterSDK } from 'word_counter_sdk_lib/dist';
 
